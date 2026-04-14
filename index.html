@@ -1,0 +1,874 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PlantForce — Field Progress</title>
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<style>
+  :root {
+    --green: #3a6b35;
+    --green-mid: #4e8a47;
+    --green-light: #eaf3e8;
+    --green-pale: #f4faf3;
+    --amber: #c47c1a;
+    --amber-light: #fef3dc;
+    --corn: #c47c1a;
+    --corn-bg: #fef3dc;
+    --beans: #2a6e4a;
+    --beans-bg: #e2f4ec;
+    --blue: #2563a8;
+    --blue-light: #e8f0fb;
+    --red: #b93030;
+    --red-light: #fdeaea;
+    --border: #d5ddd0;
+    --bg: #f5f7f4;
+    --surface: #ffffff;
+    --text: #1e2a1b;
+    --text-muted: #6b7d67;
+    --text-hint: #9aaa96;
+    --radius: 10px;
+    --radius-sm: 6px;
+    --shadow: 0 1px 3px rgba(0,0,0,0.08);
+    --shadow-md: 0 4px 12px rgba(0,0,0,0.10);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    font-size: 14px;
+    line-height: 1.5;
+    min-height: 100vh;
+  }
+
+  /* ── HEADER ── */
+  .app-header {
+    background: var(--green);
+    color: #fff;
+    padding: 0 24px;
+    height: 54px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.18);
+    position: sticky; top: 0; z-index: 100;
+  }
+  .app-title { font-size: 17px; font-weight: 600; letter-spacing: .3px; }
+  .app-title span { opacity: .65; font-weight: 400; }
+  .header-right { display: flex; align-items: center; gap: 12px; }
+  .status-dot { width: 8px; height: 8px; border-radius: 50%; background: #5dc75d; box-shadow: 0 0 0 2px rgba(93,199,93,.3); }
+  .status-dot.disconnected { background: #e0804a; box-shadow: none; }
+  .status-label { font-size: 12px; opacity: .8; }
+  .btn-sheets-link { font-size: 12px; background: rgba(255,255,255,.15); border: none; color: #fff; padding: 4px 10px; border-radius: 4px; cursor: pointer; text-decoration: none; }
+  .btn-sheets-link:hover { background: rgba(255,255,255,.25); }
+
+  /* ── SETUP SCREEN ── */
+  #setup-screen {
+    max-width: 680px; margin: 48px auto; padding: 0 20px;
+  }
+  .setup-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 32px 36px;
+    box-shadow: var(--shadow-md);
+  }
+  .setup-card h2 { font-size: 20px; font-weight: 600; margin-bottom: 6px; color: var(--green); }
+  .setup-card .setup-sub { color: var(--text-muted); margin-bottom: 28px; font-size: 13px; }
+  .step { display: flex; gap: 16px; margin-bottom: 20px; }
+  .step-num {
+    flex-shrink: 0; width: 28px; height: 28px; border-radius: 50%;
+    background: var(--green-light); color: var(--green);
+    font-size: 13px; font-weight: 600;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .step-body { padding-top: 4px; font-size: 13px; line-height: 1.7; }
+  .step-body strong { display: block; font-weight: 600; margin-bottom: 3px; }
+  .step-body p { color: var(--text-muted); }
+  .step-body a { color: var(--blue); }
+  .step-body code { background: var(--bg); padding: 1px 5px; border-radius: 3px; font-size: 12px; font-family: monospace; }
+  hr.setup-divider { border: none; border-top: 1px solid var(--border); margin: 24px 0; }
+  .setup-input-row { display: flex; gap: 10px; margin-top: 10px; }
+  .setup-input-row input { flex: 1; padding: 9px 12px; border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: 13px; }
+  .setup-note { font-size: 12px; color: var(--text-muted); background: var(--bg); padding: 12px 16px; border-radius: var(--radius-sm); line-height: 1.6; }
+
+  /* ── MAIN APP ── */
+  #app-screen { display: none; }
+  .main-wrap { max-width: 1100px; margin: 0 auto; padding: 24px 20px; }
+
+  /* ── STAT CARDS ── */
+  .stat-row { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 14px; margin-bottom: 24px; }
+  .stat-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 16px 18px;
+    box-shadow: var(--shadow);
+  }
+  .stat-label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .06em; color: var(--text-muted); margin-bottom: 6px; }
+  .stat-val { font-size: 26px; font-weight: 600; color: var(--text); line-height: 1; }
+  .stat-sub { font-size: 12px; color: var(--text-hint); margin-top: 4px; }
+
+  /* ── OPERATION CARDS ── */
+  .section-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+  .section-title { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: .07em; color: var(--text-muted); }
+  .op-row { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 14px; margin-bottom: 28px; }
+  .op-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 16px 18px;
+    box-shadow: var(--shadow);
+  }
+  .op-name { font-size: 13px; font-weight: 600; color: var(--text); margin-bottom: 12px; }
+  .prog-track { height: 7px; border-radius: 4px; background: var(--bg); overflow: hidden; margin-bottom: 8px; border: 1px solid var(--border); }
+  .prog-bar { height: 100%; border-radius: 4px; transition: width .5s ease; }
+  .prog-bar.done { background: var(--green-mid); }
+  .prog-bar.partial { background: var(--amber); }
+  .prog-bar.none { width: 0 !important; }
+  .prog-labels { display: flex; justify-content: space-between; font-size: 12px; }
+  .prog-pct { font-weight: 600; color: var(--text); }
+  .prog-acres { color: var(--text-hint); }
+
+  /* ── FIELD TABLE ── */
+  .table-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow);
+  }
+  .table-toolbar {
+    padding: 14px 18px; display: flex; align-items: center; justify-content: space-between;
+    border-bottom: 1px solid var(--border);
+  }
+  .table-toolbar-left { display: flex; align-items: center; gap: 10px; }
+  .filter-tabs { display: flex; gap: 4px; }
+  .filter-tab {
+    padding: 5px 12px; border-radius: 20px; font-size: 12px; font-weight: 500;
+    border: 1px solid var(--border); background: transparent;
+    color: var(--text-muted); cursor: pointer; transition: all .15s;
+  }
+  .filter-tab.active { background: var(--green); color: #fff; border-color: var(--green); }
+  table { width: 100%; border-collapse: collapse; }
+  thead { background: var(--bg); }
+  th {
+    padding: 10px 14px; text-align: left; font-size: 11px; font-weight: 600;
+    text-transform: uppercase; letter-spacing: .05em; color: var(--text-muted);
+    border-bottom: 1px solid var(--border); white-space: nowrap;
+  }
+  td { padding: 11px 14px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: var(--green-pale); }
+  .field-name { font-weight: 600; color: var(--text); }
+  .badge {
+    display: inline-block; font-size: 11px; font-weight: 600; padding: 2px 9px;
+    border-radius: 12px; letter-spacing: .03em;
+  }
+  .badge-corn { background: var(--corn-bg); color: var(--corn); }
+  .badge-beans { background: var(--beans-bg); color: var(--beans); }
+  .op-check {
+    width: 22px; height: 22px; border-radius: 50%;
+    border: 1.5px solid var(--border); background: transparent;
+    cursor: pointer; display: inline-flex; align-items: center; justify-content: center;
+    transition: all .15s; font-size: 13px; color: #fff;
+  }
+  .op-check.checked { background: var(--green-mid); border-color: var(--green-mid); }
+  .op-check.checked::after { content: '✓'; }
+  .op-check:hover:not(.checked) { border-color: var(--green-mid); background: var(--green-light); }
+  .row-actions { display: flex; gap: 6px; opacity: 0; transition: opacity .15s; }
+  tr:hover .row-actions { opacity: 1; }
+  .btn-row { padding: 4px 10px; font-size: 12px; border-radius: var(--radius-sm); border: 1px solid var(--border); background: transparent; cursor: pointer; color: var(--text-muted); }
+  .btn-row:hover { background: var(--bg); color: var(--text); }
+  .btn-row.danger:hover { background: var(--red-light); color: var(--red); border-color: var(--red); }
+
+  /* ── BUTTONS ── */
+  .btn {
+    padding: 8px 16px; border-radius: var(--radius-sm); font-size: 13px; font-weight: 500;
+    cursor: pointer; border: 1px solid transparent; transition: all .15s; display: inline-flex; align-items: center; gap: 6px;
+  }
+  .btn-primary { background: var(--green); color: #fff; border-color: var(--green); }
+  .btn-primary:hover { background: #2e5429; }
+  .btn-ghost { background: transparent; color: var(--text-muted); border-color: var(--border); }
+  .btn-ghost:hover { background: var(--bg); color: var(--text); }
+  .btn-danger { background: transparent; color: var(--red); border-color: var(--red); }
+  .btn-danger:hover { background: var(--red-light); }
+
+  /* ── MODAL ── */
+  .modal-overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,.45);
+    display: none; align-items: center; justify-content: center; z-index: 200;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal {
+    background: var(--surface); border-radius: var(--radius); width: 520px; max-width: 95vw;
+    box-shadow: var(--shadow-md); overflow: hidden;
+  }
+  .modal-head {
+    padding: 16px 20px; border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .modal-head h3 { font-size: 14px; font-weight: 600; letter-spacing: .04em; color: var(--text); text-transform: uppercase; }
+  .close-btn {
+    width: 28px; height: 28px; border: none; background: transparent; color: var(--text-muted);
+    font-size: 20px; cursor: pointer; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+  }
+  .close-btn:hover { background: var(--bg); }
+  .modal-body { padding: 20px; }
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .form-group { display: flex; flex-direction: column; gap: 5px; }
+  .form-group.span-full { grid-column: 1 / -1; }
+  .form-group label { font-size: 12px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: .05em; }
+  .form-group input, .form-group select {
+    padding: 9px 12px; border: 1px solid var(--border); border-radius: var(--radius-sm);
+    font-size: 13px; background: var(--surface); color: var(--text);
+    transition: border-color .15s;
+  }
+  .form-group input:focus, .form-group select:focus { outline: none; border-color: var(--green-mid); box-shadow: 0 0 0 3px rgba(78,138,71,.12); }
+  .modal-footer {
+    padding: 14px 20px; border-top: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: flex-end; gap: 10px;
+  }
+  .modal-footer-left { margin-right: auto; }
+
+  /* ── SAVING INDICATOR ── */
+  .save-indicator {
+    position: fixed; bottom: 20px; right: 20px;
+    background: var(--text); color: #fff; font-size: 12px; padding: 8px 14px;
+    border-radius: 6px; opacity: 0; transform: translateY(8px);
+    transition: all .25s; pointer-events: none; z-index: 300;
+  }
+  .save-indicator.show { opacity: 1; transform: translateY(0); }
+
+  /* ── LOADING ── */
+  .loading-row td { text-align: center; padding: 40px; color: var(--text-muted); font-style: italic; }
+  .empty-row td { text-align: center; padding: 40px; color: var(--text-hint); }
+
+  /* ── RESPONSIVE ── */
+  @media (max-width: 700px) {
+    .stat-row { grid-template-columns: 1fr 1fr; }
+    .op-row { grid-template-columns: 1fr 1fr; }
+    .table-toolbar { flex-direction: column; align-items: flex-start; gap: 10px; }
+    th.hide-sm, td.hide-sm { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ══ HEADER ══ -->
+<header class="app-header">
+  <div class="app-title">PlantForce <span>Field Progress</span></div>
+  <div class="header-right">
+    <div id="status-dot" class="status-dot disconnected"></div>
+    <span id="status-label" class="status-label">Not connected</span>
+    <a id="sheets-link" href="#" target="_blank" class="btn-sheets-link" style="display:none">Open Sheet ↗</a>
+  </div>
+</header>
+
+<!-- ══ SETUP SCREEN ══ -->
+<div id="setup-screen">
+  <div class="setup-card">
+    <h2>Connect Google Sheets</h2>
+    <div class="setup-sub">One-time setup · Your data stays in your Google account</div>
+
+    <div class="step">
+      <div class="step-num">1</div>
+      <div class="step-body">
+        <strong>Go to Google Cloud Console</strong>
+        <p>Open <a href="https://console.cloud.google.com/" target="_blank">console.cloud.google.com</a> and sign in.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">2</div>
+      <div class="step-body">
+        <strong>Create a new project</strong>
+        <p>Click the project dropdown → <strong>New Project</strong>. Name it <code>PlantForce</code>. Click <strong>Create</strong>.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">3</div>
+      <div class="step-body">
+        <strong>Enable the Google Sheets API</strong>
+        <p>Go to <strong>APIs &amp; Services → Library</strong>. Search <code>Google Sheets API</code> and click <strong>Enable</strong>.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">4</div>
+      <div class="step-body">
+        <strong>Create an OAuth 2.0 Client ID</strong>
+        <p>Go to <strong>APIs &amp; Services → Credentials → Create Credentials → OAuth client ID</strong>.<br>
+        · Application type: <code>Web application</code><br>
+        · Name: <code>PlantForce</code><br>
+        · Authorized JavaScript origins: add <code>https://yourusername.github.io</code><br>
+        Click <strong>Create</strong> and copy the Client ID.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">5</div>
+      <div class="step-body">
+        <strong>Configure OAuth consent screen</strong>
+        <p>Go to <strong>APIs &amp; Services → OAuth consent screen</strong>. Choose <strong>External</strong>, fill in app name <code>PlantForce</code> and your email. Add yourself and any viewers as <strong>Test users</strong>.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">6</div>
+      <div class="step-body">
+        <strong>Host on GitHub Pages</strong>
+        <p>· Create a repo (e.g. <code>plantforce</code>), upload this file as <code>index.html</code><br>
+        · Go to <strong>Settings → Pages → Branch: main → Save</strong><br>
+        · Your app will be at <code>https://yourusername.github.io/plantforce/</code><br>
+        · Share that URL with anyone who needs view/edit access — they'll sign in with their own Google account (must be added as a Test user above)</p>
+      </div>
+    </div>
+
+    <hr class="setup-divider">
+
+    <div class="step">
+      <div class="step-num">7</div>
+      <div class="step-body">
+        <strong>Enter your Client ID below</strong>
+        <p>Paste the Client ID from Step 4.</p>
+        <div class="setup-input-row">
+          <input id="setup-client-id" placeholder="xxxxxxxxxxxx.apps.googleusercontent.com">
+          <button class="btn btn-primary" onclick="saveClientId()">Save &amp; Connect</button>
+        </div>
+      </div>
+    </div>
+
+    <hr class="setup-divider">
+    <div class="setup-note">
+      🔒 <strong>Privacy:</strong> Your Client ID and all field data stay entirely within your Google account. PlantForce communicates directly between your browser and Google's API — no data passes through any third-party server.
+    </div>
+  </div>
+</div>
+
+<!-- ══ MAIN APP ══ -->
+<div id="app-screen">
+  <div class="main-wrap">
+
+    <!-- Stat cards -->
+    <div class="stat-row">
+      <div class="stat-card">
+        <div class="stat-label">Total acres</div>
+        <div class="stat-val" id="stat-total-acres">—</div>
+        <div class="stat-sub" id="stat-field-count">— fields</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Corn</div>
+        <div class="stat-val" id="stat-corn-acres">—</div>
+        <div class="stat-sub" id="stat-corn-count">— fields</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Beans</div>
+        <div class="stat-val" id="stat-beans-acres">—</div>
+        <div class="stat-sub" id="stat-beans-count">— fields</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Season progress</div>
+        <div class="stat-val" id="stat-season-pct">—</div>
+        <div class="stat-sub">all operations</div>
+      </div>
+    </div>
+
+    <!-- Operations overview -->
+    <div class="section-head">
+      <span class="section-title">Operations overview</span>
+    </div>
+    <div class="op-row">
+      <div class="op-card">
+        <div class="op-name">Pre-spray</div>
+        <div class="prog-track"><div class="prog-bar" id="bar-prespray" style="width:0%"></div></div>
+        <div class="prog-labels">
+          <span class="prog-pct" id="pct-prespray">0%</span>
+          <span class="prog-acres" id="acres-prespray">0 / 0 ac</span>
+        </div>
+      </div>
+      <div class="op-card">
+        <div class="op-name">Planting</div>
+        <div class="prog-track"><div class="prog-bar" id="bar-planting" style="width:0%"></div></div>
+        <div class="prog-labels">
+          <span class="prog-pct" id="pct-planting">0%</span>
+          <span class="prog-acres" id="acres-planting">0 / 0 ac</span>
+        </div>
+      </div>
+      <div class="op-card">
+        <div class="op-name">Post-spray</div>
+        <div class="prog-track"><div class="prog-bar" id="bar-postspray" style="width:0%"></div></div>
+        <div class="prog-labels">
+          <span class="prog-pct" id="pct-postspray">0%</span>
+          <span class="prog-acres" id="acres-postspray">0 / 0 ac</span>
+        </div>
+      </div>
+      <div class="op-card">
+        <div class="op-name">Harvest</div>
+        <div class="prog-track"><div class="prog-bar" id="bar-harvest" style="width:0%"></div></div>
+        <div class="prog-labels">
+          <span class="prog-pct" id="pct-harvest">0%</span>
+          <span class="prog-acres" id="acres-harvest">0 / 0 ac</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Field table -->
+    <div class="table-card">
+      <div class="table-toolbar">
+        <div class="table-toolbar-left">
+          <div class="filter-tabs">
+            <button class="filter-tab active" onclick="setFilter('all', this)">All</button>
+            <button class="filter-tab" onclick="setFilter('corn', this)">Corn</button>
+            <button class="filter-tab" onclick="setFilter('beans', this)">Beans</button>
+          </div>
+        </div>
+        <button class="btn btn-primary" onclick="openAddField()">+ Add Field</button>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>Field</th>
+            <th>Crop</th>
+            <th>Acres</th>
+            <th>Pre-spray</th>
+            <th>Planting</th>
+            <th>Post-spray</th>
+            <th>Harvest</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="field-tbody">
+          <tr class="loading-row"><td colspan="8">Loading fields…</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+  </div>
+</div>
+
+<!-- ══ ADD/EDIT FIELD MODAL ══ -->
+<div class="modal-overlay" id="modal-field">
+  <div class="modal">
+    <div class="modal-head">
+      <h3 id="field-modal-title">Add Field</h3>
+      <button class="close-btn" onclick="closeModal('modal-field')">×</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="field-id">
+      <div class="form-grid">
+        <div class="form-group span-full">
+          <label>Field name *</label>
+          <input id="field-name" placeholder="e.g. Ernie's, Burns North">
+        </div>
+        <div class="form-group">
+          <label>Crop *</label>
+          <select id="field-crop">
+            <option value="">Select crop…</option>
+            <option value="corn">Corn</option>
+            <option value="beans">Beans</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Acres *</label>
+          <input id="field-acres" type="number" step="0.1" min="0" placeholder="0.0">
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <div class="modal-footer-left">
+        <button class="btn btn-danger" id="btn-delete-field" onclick="deleteField()" style="display:none">Delete Field</button>
+      </div>
+      <button class="btn btn-ghost" onclick="closeModal('modal-field')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveField()">Save Field</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ CONFIRM DELETE MODAL ══ -->
+<div class="modal-overlay" id="modal-confirm">
+  <div class="modal" style="width:400px">
+    <div class="modal-head">
+      <h3>Confirm Delete</h3>
+      <button class="close-btn" onclick="closeModal('modal-confirm')">×</button>
+    </div>
+    <div class="modal-body">
+      <p id="confirm-msg" style="font-size:14px; color: var(--text-muted); line-height:1.7"></p>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modal-confirm')">Cancel</button>
+      <button class="btn btn-danger" id="confirm-ok-btn">Delete</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ SAVE INDICATOR ══ -->
+<div class="save-indicator" id="save-indicator">Saved to Google Sheets</div>
+
+<script>
+// ══════════════════════════════════════════
+// CONFIG & STATE
+// ══════════════════════════════════════════
+const SCOPES = 'https://www.googleapis.com/auth/spreadsheets';
+const SHEET_TITLE = 'PlantForce';
+const FIELDS_SHEET = 'Fields';
+const PROGRESS_SHEET = 'Progress';
+const OPS = ['prespray', 'planting', 'postspray', 'harvest'];
+const OP_LABELS = { prespray: 'Pre-spray', planting: 'Planting', postspray: 'Post-spray', harvest: 'Harvest' };
+
+let tokenClient = null;
+let accessToken = null;
+let spreadsheetId = null;
+let fields = [];      // [{id, name, crop, acres}]
+let progress = {};    // { fieldId: { prespray:bool, planting:bool, postspray:bool, harvest:bool } }
+let cropFilter = 'all';
+let editingFieldId = null;
+let saveTimer = null;
+
+// ══════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════
+window.addEventListener('load', () => {
+  const clientId = localStorage.getItem('pf_client_id');
+  const sheetId = localStorage.getItem('pf_sheet_id');
+  if (clientId) {
+    initGsi(clientId, sheetId);
+  }
+});
+
+function saveClientId() {
+  const val = document.getElementById('setup-client-id').value.trim();
+  if (!val) return alert('Please enter your Client ID.');
+  localStorage.setItem('pf_client_id', val);
+  initGsi(val, null);
+}
+
+function initGsi(clientId, sheetId) {
+  spreadsheetId = sheetId;
+  tokenClient = google.accounts.oauth2.initTokenClient({
+    client_id: clientId,
+    scope: SCOPES,
+    callback: (resp) => {
+      if (resp.error) { setStatus(false, resp.error); return; }
+      accessToken = resp.access_token;
+      setStatus(true, 'Connected');
+      document.getElementById('setup-screen').style.display = 'none';
+      document.getElementById('app-screen').style.display = 'block';
+      if (spreadsheetId) {
+        loadData();
+      } else {
+        createSpreadsheet();
+      }
+    }
+  });
+  tokenClient.requestAccessToken({ prompt: '' });
+}
+
+function setStatus(ok, label) {
+  document.getElementById('status-dot').className = 'status-dot' + (ok ? '' : ' disconnected');
+  document.getElementById('status-label').textContent = label;
+}
+
+// ══════════════════════════════════════════
+// SHEETS API HELPERS
+// ══════════════════════════════════════════
+async function sheetsRequest(method, path, body) {
+  const res = await fetch('https://sheets.googleapis.com/v4/spreadsheets' + path, {
+    method,
+    headers: {
+      'Authorization': 'Bearer ' + accessToken,
+      'Content-Type': 'application/json'
+    },
+    body: body ? JSON.stringify(body) : undefined
+  });
+  if (!res.ok) {
+    const err = await res.json();
+    throw new Error(err.error?.message || res.statusText);
+  }
+  return res.json();
+}
+
+async function createSpreadsheet() {
+  setStatus(true, 'Creating sheet…');
+  const data = await sheetsRequest('POST', '', {
+    properties: { title: SHEET_TITLE },
+    sheets: [
+      { properties: { title: FIELDS_SHEET } },
+      { properties: { title: PROGRESS_SHEET } }
+    ]
+  });
+  spreadsheetId = data.spreadsheetId;
+  localStorage.setItem('pf_sheet_id', spreadsheetId);
+
+  const sheetUrl = 'https://docs.google.com/spreadsheets/d/' + spreadsheetId;
+  const link = document.getElementById('sheets-link');
+  link.href = sheetUrl;
+  link.style.display = 'inline-block';
+
+  await sheetsRequest('PUT', `/${spreadsheetId}/values/${FIELDS_SHEET}!A1:D1?valueInputOption=RAW`, {
+    values: [['ID', 'Name', 'Crop', 'Acres']]
+  });
+  await sheetsRequest('PUT', `/${spreadsheetId}/values/${PROGRESS_SHEET}!A1:F1?valueInputOption=RAW`, {
+    values: [['FieldID', 'FieldName', 'PreSpray', 'Planting', 'PostSpray', 'Harvest']]
+  });
+
+  setStatus(true, 'Connected');
+  fields = []; progress = {};
+  renderAll();
+}
+
+async function loadData() {
+  setStatus(true, 'Loading…');
+  const sheetUrl = 'https://docs.google.com/spreadsheets/d/' + spreadsheetId;
+  const link = document.getElementById('sheets-link');
+  link.href = sheetUrl;
+  link.style.display = 'inline-block';
+
+  try {
+    const resp = await sheetsRequest('GET', `/${spreadsheetId}/values:batchGet?ranges=${FIELDS_SHEET}!A1:D1000&ranges=${PROGRESS_SHEET}!A1:F1000`);
+    const fRows = resp.valueRanges[0].values || [];
+    const pRows = resp.valueRanges[1].values || [];
+
+    fields = [];
+    for (let i = 1; i < fRows.length; i++) {
+      const r = fRows[i];
+      if (!r[0]) continue;
+      fields.push({ id: r[0], name: r[1] || '', crop: r[2] || '', acres: parseFloat(r[3]) || 0 });
+    }
+
+    progress = {};
+    for (let i = 1; i < pRows.length; i++) {
+      const r = pRows[i];
+      if (!r[0]) continue;
+      progress[r[0]] = {
+        prespray:  r[2] === 'TRUE',
+        planting:  r[3] === 'TRUE',
+        postspray: r[4] === 'TRUE',
+        harvest:   r[5] === 'TRUE'
+      };
+    }
+
+    setStatus(true, 'Connected');
+    renderAll();
+  } catch(e) {
+    setStatus(false, 'Load error');
+    console.error(e);
+  }
+}
+
+async function saveAllToSheets() {
+  if (!spreadsheetId) return;
+  try {
+    const fVals = [['ID', 'Name', 'Crop', 'Acres']];
+    fields.forEach(f => fVals.push([f.id, f.name, f.crop, f.acres]));
+
+    const pVals = [['FieldID', 'FieldName', 'PreSpray', 'Planting', 'PostSpray', 'Harvest']];
+    fields.forEach(f => {
+      const p = progress[f.id] || {};
+      pVals.push([f.id, f.name, !!p.prespray, !!p.planting, !!p.postspray, !!p.harvest]);
+    });
+
+    await sheetsRequest('POST', `/${spreadsheetId}/values:batchClear`, {
+      ranges: [`${FIELDS_SHEET}!A1:Z1000`, `${PROGRESS_SHEET}!A1:Z1000`]
+    });
+    await sheetsRequest('POST', `/${spreadsheetId}/values:batchUpdate?valueInputOption=RAW`, {
+      data: [
+        { range: `${FIELDS_SHEET}!A1`, values: fVals },
+        { range: `${PROGRESS_SHEET}!A1`, values: pVals }
+      ]
+    });
+
+    showSaved();
+  } catch(e) {
+    setStatus(false, 'Save error');
+    console.error(e);
+  }
+}
+
+function scheduleSave() {
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(saveAllToSheets, 800);
+}
+
+function showSaved() {
+  const el = document.getElementById('save-indicator');
+  el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), 2000);
+}
+
+// ══════════════════════════════════════════
+// RENDER
+// ══════════════════════════════════════════
+function renderAll() {
+  renderStats();
+  renderOpBars();
+  renderTable();
+}
+
+function renderStats() {
+  const total = fields.reduce((s, f) => s + f.acres, 0);
+  const corn  = fields.filter(f => f.crop === 'corn');
+  const beans = fields.filter(f => f.crop === 'beans');
+  const cornAc  = corn.reduce((s, f) => s + f.acres, 0);
+  const beansAc = beans.reduce((s, f) => s + f.acres, 0);
+
+  let completedOps = 0, totalOps = fields.length * 4;
+  fields.forEach(f => {
+    const p = progress[f.id] || {};
+    OPS.forEach(op => { if (p[op]) completedOps++; });
+  });
+  const seasonPct = totalOps ? Math.round(completedOps / totalOps * 100) : 0;
+
+  document.getElementById('stat-total-acres').textContent = total.toLocaleString();
+  document.getElementById('stat-field-count').textContent = fields.length + ' field' + (fields.length !== 1 ? 's' : '');
+  document.getElementById('stat-corn-acres').textContent = cornAc.toLocaleString() + ' ac';
+  document.getElementById('stat-corn-count').textContent = corn.length + ' field' + (corn.length !== 1 ? 's' : '');
+  document.getElementById('stat-beans-acres').textContent = beansAc.toLocaleString() + ' ac';
+  document.getElementById('stat-beans-count').textContent = beans.length + ' field' + (beans.length !== 1 ? 's' : '');
+  document.getElementById('stat-season-pct').textContent = seasonPct + '%';
+}
+
+function renderOpBars() {
+  const totalAc = fields.reduce((s, f) => s + f.acres, 0);
+  OPS.forEach(op => {
+    const doneAc = fields.filter(f => (progress[f.id] || {})[op]).reduce((s, f) => s + f.acres, 0);
+    const pct = totalAc ? Math.round(doneAc / totalAc * 100) : 0;
+    const bar = document.getElementById('bar-' + op);
+    bar.style.width = pct + '%';
+    bar.className = 'prog-bar ' + (pct === 100 ? 'done' : pct > 0 ? 'partial' : 'none');
+    document.getElementById('pct-' + op).textContent = pct + '%';
+    document.getElementById('acres-' + op).textContent = Math.round(doneAc).toLocaleString() + ' / ' + Math.round(totalAc).toLocaleString() + ' ac';
+  });
+}
+
+function renderTable() {
+  const tbody = document.getElementById('field-tbody');
+  const visible = fields.filter(f => cropFilter === 'all' || f.crop === cropFilter);
+
+  if (!visible.length) {
+    tbody.innerHTML = '<tr class="empty-row"><td colspan="8">No fields yet — click <strong>+ Add Field</strong> to get started.</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = visible.map(f => {
+    const p = progress[f.id] || {};
+    const checks = OPS.map(op => `
+      <td>
+        <div class="op-check ${p[op] ? 'checked' : ''}" onclick="toggleOp('${f.id}','${op}',this)" title="${OP_LABELS[op]}"></div>
+      </td>`).join('');
+    return `<tr>
+      <td class="field-name">${escHtml(f.name)}</td>
+      <td><span class="badge badge-${f.crop}">${f.crop}</span></td>
+      <td>${f.acres.toLocaleString()}</td>
+      ${checks}
+      <td>
+        <div class="row-actions">
+          <button class="btn-row" onclick="openEditField('${f.id}')">Edit</button>
+          <button class="btn-row danger" onclick="confirmDeleteField('${f.id}')">Delete</button>
+        </div>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function escHtml(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ══════════════════════════════════════════
+// OPERATIONS (checkbox toggle)
+// ══════════════════════════════════════════
+function toggleOp(fieldId, op, el) {
+  if (!progress[fieldId]) progress[fieldId] = {};
+  progress[fieldId][op] = !progress[fieldId][op];
+  el.classList.toggle('checked', progress[fieldId][op]);
+  renderStats();
+  renderOpBars();
+  scheduleSave();
+}
+
+// ══════════════════════════════════════════
+// ADD / EDIT FIELD
+// ══════════════════════════════════════════
+function openAddField() {
+  editingFieldId = null;
+  document.getElementById('field-modal-title').textContent = 'Add Field';
+  document.getElementById('field-id').value = '';
+  document.getElementById('field-name').value = '';
+  document.getElementById('field-crop').value = '';
+  document.getElementById('field-acres').value = '';
+  document.getElementById('btn-delete-field').style.display = 'none';
+  openModal('modal-field');
+}
+
+function openEditField(id) {
+  const f = fields.find(x => x.id === id);
+  if (!f) return;
+  editingFieldId = id;
+  document.getElementById('field-modal-title').textContent = 'Edit Field';
+  document.getElementById('field-id').value = f.id;
+  document.getElementById('field-name').value = f.name;
+  document.getElementById('field-crop').value = f.crop;
+  document.getElementById('field-acres').value = f.acres;
+  document.getElementById('btn-delete-field').style.display = 'inline-flex';
+  openModal('modal-field');
+}
+
+function saveField() {
+  const name  = document.getElementById('field-name').value.trim();
+  const crop  = document.getElementById('field-crop').value;
+  const acres = parseFloat(document.getElementById('field-acres').value);
+
+  if (!name) { alert('Field name is required.'); return; }
+  if (!crop) { alert('Please select a crop.'); return; }
+  if (!acres || acres <= 0) { alert('Please enter a valid acreage.'); return; }
+
+  if (editingFieldId) {
+    const f = fields.find(x => x.id === editingFieldId);
+    if (f) { f.name = name; f.crop = crop; f.acres = acres; }
+  } else {
+    const id = 'f' + Date.now();
+    fields.push({ id, name, crop, acres });
+    progress[id] = { prespray: false, planting: false, postspray: false, harvest: false };
+  }
+
+  closeModal('modal-field');
+  renderAll();
+  scheduleSave();
+}
+
+function confirmDeleteField(id) {
+  const f = fields.find(x => x.id === id);
+  if (!f) return;
+  document.getElementById('confirm-msg').textContent = `Delete "${f.name}"? This will remove the field and all its progress data. This cannot be undone.`;
+  document.getElementById('confirm-ok-btn').onclick = () => {
+    fields = fields.filter(x => x.id !== id);
+    delete progress[id];
+    closeModal('modal-confirm');
+    renderAll();
+    scheduleSave();
+  };
+  openModal('modal-confirm');
+}
+
+function deleteField() {
+  const id = document.getElementById('field-id').value;
+  closeModal('modal-field');
+  confirmDeleteField(id);
+}
+
+// ══════════════════════════════════════════
+// FILTER
+// ══════════════════════════════════════════
+function setFilter(val, el) {
+  cropFilter = val;
+  document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  renderTable();
+}
+
+// ══════════════════════════════════════════
+// MODAL HELPERS
+// ══════════════════════════════════════════
+function openModal(id) {
+  document.getElementById(id).classList.add('open');
+}
+function closeModal(id) {
+  document.getElementById(id).classList.remove('open');
+}
+document.querySelectorAll('.modal-overlay').forEach(el => {
+  el.addEventListener('click', e => { if (e.target === el) el.classList.remove('open'); });
+});
+</script>
+</body>
+</html>
