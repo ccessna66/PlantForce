@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>PlantForce — Field Progress</title>
+<title>Field Progress Tracker</title>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <style>
   :root {
@@ -97,12 +97,13 @@
   .prog-acres { color: var(--text-hint); }
 
   .table-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow); }
+  .table-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
   .table-toolbar { padding: 14px 18px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border); gap: 10px; flex-wrap: wrap; }
   .toolbar-left { display: flex; align-items: center; gap: 8px; }
   .filter-tabs { display: flex; gap: 4px; }
   .filter-tab { padding: 5px 12px; border-radius: 20px; font-size: 12px; font-weight: 500; border: 1px solid var(--border); background: transparent; color: var(--text-muted); cursor: pointer; transition: all .15s; }
   .filter-tab.active { background: var(--green); color: #fff; border-color: var(--green); }
-  table { width: 100%; border-collapse: collapse; }
+  table { width: 100%; border-collapse: collapse; min-width: 680px; }
   thead { background: var(--bg); }
   th { padding: 10px 14px; text-align: left; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .05em; color: var(--text-muted); border-bottom: 1px solid var(--border); white-space: nowrap; }
   td { padding: 11px 14px; border-bottom: 1px solid var(--border); vertical-align: middle; }
@@ -153,15 +154,17 @@
   .loading-row td, .empty-row td { text-align: center; padding: 40px; color: var(--text-hint); font-style: italic; }
 
   @media (max-width: 700px) {
-    .stat-row, .op-row { grid-template-columns: 1fr 1fr; }
+    .stat-row { grid-template-columns: 1fr 1fr; }
+    .op-row { grid-template-columns: 1fr 1fr; }
     .table-toolbar { flex-direction: column; align-items: flex-start; }
+    .row-actions { opacity: 1; }
   }
 </style>
 </head>
 <body>
 
 <header class="app-header">
-  <div class="app-title">PlantForce <span>Field Progress</span></div>
+  <div class="app-title">Field Progress Tracker</div>
   <div class="header-right">
     <div id="status-dot" class="status-dot off"></div>
     <span id="status-label" class="status-label">Not connected</span>
@@ -178,7 +181,7 @@
 
 <div id="setup-screen">
   <div class="setup-card">
-    <h2>Connect to PlantForce</h2>
+    <h2>Connect to Field Progress Tracker</h2>
     <div class="setup-sub">Sign in with Google to access the shared field tracker</div>
     <div class="setup-mode-tabs">
       <button class="setup-mode-tab active" onclick="switchSetupMode('owner',this)">First-time setup (owner)</button>
@@ -320,6 +323,7 @@
         </div>
         <button class="btn btn-primary" onclick="openAddField()">+ Add Field</button>
       </div>
+      <div class="table-scroll">
       <table>
         <thead>
           <tr>
@@ -332,6 +336,7 @@
           <tr class="loading-row"><td colspan="9">Loading&hellip;</td></tr>
         </tbody>
       </table>
+      </div>
     </div>
   </div>
 </div>
