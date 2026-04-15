@@ -85,7 +85,7 @@
 
   .section-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
   .section-title { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: .07em; color: var(--text-muted); }
-  .op-row { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 14px; margin-bottom: 28px; }
+  .op-row { display: grid; grid-template-columns: repeat(5, minmax(0,1fr)); gap: 14px; margin-bottom: 28px; }
   .op-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px 18px; box-shadow: var(--shadow); }
   .op-name { font-size: 13px; font-weight: 600; color: var(--text); margin-bottom: 12px; }
   .prog-track { height: 7px; border-radius: 4px; background: var(--bg); overflow: hidden; margin-bottom: 8px; border: 1px solid var(--border); }
@@ -298,6 +298,11 @@
         <div class="prog-labels"><span class="prog-pct" id="pct-postspray">0%</span><span class="prog-acres" id="ac-postspray">0 / 0 ac</span></div>
       </div>
       <div class="op-card">
+        <div class="op-name">Fertilizer</div>
+        <div class="prog-track"><div class="prog-bar" id="bar-fertilizer" style="width:0%"></div></div>
+        <div class="prog-labels"><span class="prog-pct" id="pct-fertilizer">0%</span><span class="prog-acres" id="ac-fertilizer">0 / 0 ac</span></div>
+      </div>
+      <div class="op-card">
         <div class="op-name">Harvest</div>
         <div class="prog-track"><div class="prog-bar" id="bar-harvest" style="width:0%"></div></div>
         <div class="prog-labels"><span class="prog-pct" id="pct-harvest">0%</span><span class="prog-acres" id="ac-harvest">0 / 0 ac</span></div>
@@ -319,12 +324,12 @@
         <thead>
           <tr>
             <th>Field</th><th>Crop</th><th>Acres</th>
-            <th>Pre-spray</th><th>Planting</th><th>Post-spray</th><th>Harvest</th>
+            <th>Pre-spray</th><th>Planting</th><th>Fertilizer</th><th>Post-spray</th><th>Harvest</th>
             <th></th>
           </tr>
         </thead>
         <tbody id="field-tbody">
-          <tr class="loading-row"><td colspan="8">Loading&hellip;</td></tr>
+          <tr class="loading-row"><td colspan="9">Loading&hellip;</td></tr>
         </tbody>
       </table>
     </div>
@@ -413,14 +418,14 @@
 <script>
 const SCOPES = 'https://www.googleapis.com/auth/spreadsheets';
 const FIELDS_TAB = 'Fields';
-const OPS = ['prespray','planting','postspray','harvest'];
-const OP_LABEL = {prespray:'Pre-spray',planting:'Planting',postspray:'Post-spray',harvest:'Harvest'};
+const OPS = ['prespray','planting','fertilizer','postspray','harvest'];
+const OP_LABEL = {prespray:'Pre-spray',planting:'Planting',fertilizer:'Fertilizer',postspray:'Post-spray',harvest:'Harvest'};
 
 let accessToken = null, tokenClient = null;
 let spreadsheetId = null, clientId = null;
 let activeYear = null, years = [];
 let fields = [];    // [{id, name, acres}]
-let yearData = {};  // {year: [{fieldId, crop, prespray, planting, postspray, harvest}]}
+let yearData = {};  // {year: [{fieldId, crop, prespray, planting, fertilizer, postspray, harvest}]}
 let sheetMeta = {}; // {sheetTitle: sheetId}
 let cropFilter = 'all', editingFieldId = null, saveTimer = null;
 
@@ -520,7 +525,7 @@ async function addSheet(title) {
 async function ensureYearSheet(year) {
   if (sheetMeta[String(year)] === undefined) {
     await addSheet(String(year));
-    await setValues(year+'!A1:G1', [['FieldID','FieldName','Crop','PreSpray','Planting','PostSpray','Harvest']]);
+    await setValues(year+'!A1:H1', [['FieldID','FieldName','Crop','PreSpray','Planting','Fertilizer','PostSpray','Harvest']]);
   }
 }
 
@@ -540,7 +545,7 @@ async function createSpreadsheet() {
 
   await getSheetMeta();
   await setValues(FIELDS_TAB+'!A1:C1', [['ID','Name','Acres']]);
-  await setValues(curYear+'!A1:G1', [['FieldID','FieldName','Crop','PreSpray','Planting','PostSpray','Harvest']]);
+  await setValues(curYear+'!A1:H1', [['FieldID','FieldName','Crop','PreSpray','Planting','Fertilizer','PostSpray','Harvest']]);
 
   updateSheetsLink();
   setStatus(true, 'Connected');
@@ -580,11 +585,11 @@ async function loadAll() {
 }
 
 async function loadYearData(year) {
-  const rows = await getValues(year+'!A2:G1000');
+  const rows = await getValues(year+'!A2:H1000');
   yearData[year] = rows.filter(r=>r[0]).map(r=>({
     fieldId:r[0], crop:r[2]||'',
     prespray:r[3]==='TRUE', planting:r[4]==='TRUE',
-    postspray:r[5]==='TRUE', harvest:r[6]==='TRUE'
+    fertilizer:r[5]==='TRUE', postspray:r[6]==='TRUE', harvest:r[7]==='TRUE'
   }));
 }
 
@@ -618,10 +623,10 @@ async function saveAll() {
 
 async function saveYearTab(year) {
   const yd = yearData[year]||[];
-  const rows = [['FieldID','FieldName','Crop','PreSpray','Planting','PostSpray','Harvest'],
+  const rows = [['FieldID','FieldName','Crop','PreSpray','Planting','Fertilizer','PostSpray','Harvest'],
     ...fields.map(f => {
       const d = yd.find(x=>x.fieldId===f.id)||{};
-      return [f.id, f.name, d.crop||'', !!d.prespray, !!d.planting, !!d.postspray, !!d.harvest];
+      return [f.id, f.name, d.crop||'', !!d.prespray, !!d.planting, !!d.fertilizer, !!d.postspray, !!d.harvest];
     })
   ];
   await clearRange(year+'!A1:Z1000');
@@ -656,11 +661,11 @@ async function addYear() {
   closeModal('modal-year');
   setStatus(true, 'Adding year…');
   await ensureYearSheet(y);
-  const rows = [['FieldID','FieldName','Crop','PreSpray','Planting','PostSpray','Harvest'],
-    ...fields.map(f=>[f.id,f.name,'',false,false,false,false])
+  const rows = [['FieldID','FieldName','Crop','PreSpray','Planting','Fertilizer','PostSpray','Harvest'],
+    ...fields.map(f=>[f.id,f.name,'',false,false,false,false,false])
   ];
   await setValues(y+'!A1', rows);
-  yearData[y] = fields.map(f=>({fieldId:f.id,crop:'',prespray:false,planting:false,postspray:false,harvest:false}));
+  yearData[y] = fields.map(f=>({fieldId:f.id,crop:'',prespray:false,planting:false,fertilizer:false,postspray:false,harvest:false}));
   years.push(y); years.sort();
   activeYear=y;
   setStatus(true, 'Connected');
@@ -674,7 +679,7 @@ function getYearFields() {
   const yd = yearData[activeYear]||[];
   return fields.map(f => {
     const d = yd.find(x=>x.fieldId===f.id)||{};
-    return {...f, crop:d.crop||'', prespray:!!d.prespray, planting:!!d.planting, postspray:!!d.postspray, harvest:!!d.harvest};
+    return {...f, crop:d.crop||'', prespray:!!d.prespray, planting:!!d.planting, fertilizer:!!d.fertilizer, postspray:!!d.postspray, harvest:!!d.harvest};
   });
 }
 
@@ -714,7 +719,7 @@ function renderTable() {
   const tbody = document.getElementById('field-tbody');
   const yf = getYearFields().filter(f=>cropFilter==='all'||f.crop===cropFilter);
   if (!yf.length) {
-    tbody.innerHTML='<tr class="empty-row"><td colspan="8">No fields yet &mdash; click <strong>+ Add Field</strong> to get started.</td></tr>';
+    tbody.innerHTML='<tr class="empty-row"><td colspan="9">No fields yet &mdash; click <strong>+ Add Field</strong> to get started.</td></tr>';
     return;
   }
   tbody.innerHTML = yf.map(f => {
@@ -736,7 +741,7 @@ function renderTable() {
 function toggleOp(fieldId, op, el) {
   if (!yearData[activeYear]) yearData[activeYear]=[];
   let d = yearData[activeYear].find(x=>x.fieldId===fieldId);
-  if (!d) { d={fieldId,crop:'',prespray:false,planting:false,postspray:false,harvest:false}; yearData[activeYear].push(d); }
+  if (!d) { d={fieldId,crop:'',prespray:false,planting:false,fertilizer:false,postspray:false,harvest:false}; yearData[activeYear].push(d); }
   d[op]=!d[op];
   el.classList.toggle('checked', d[op]);
   renderStats(); renderOpBars();
@@ -786,16 +791,16 @@ function saveField() {
     if (f) { f.name=name; f.acres=acres; }
     if (!yearData[activeYear]) yearData[activeYear]=[];
     let d = yearData[activeYear].find(x=>x.fieldId===editingFieldId);
-    if (!d) { d={fieldId:editingFieldId,crop:'',prespray:false,planting:false,postspray:false,harvest:false}; yearData[activeYear].push(d); }
+    if (!d) { d={fieldId:editingFieldId,crop:'',prespray:false,planting:false,fertilizer:false,postspray:false,harvest:false}; yearData[activeYear].push(d); }
     d.crop=crop;
   } else {
     const id='f'+Date.now();
     fields.push({id,name,acres});
     if (!yearData[activeYear]) yearData[activeYear]=[];
-    yearData[activeYear].push({fieldId:id,crop,prespray:false,planting:false,postspray:false,harvest:false});
+    yearData[activeYear].push({fieldId:id,crop,prespray:false,planting:false,fertilizer:false,postspray:false,harvest:false});
     years.filter(y=>y!==activeYear).forEach(y=>{
       if (!yearData[y]) yearData[y]=[];
-      yearData[y].push({fieldId:id,crop:'',prespray:false,planting:false,postspray:false,harvest:false});
+      yearData[y].push({fieldId:id,crop:'',prespray:false,planting:false,fertilizer:false,postspray:false,harvest:false});
     });
   }
   closeModal('modal-field');
