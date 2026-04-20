@@ -95,6 +95,16 @@
   .prog-labels { display: flex; justify-content: space-between; font-size: 12px; }
   .prog-pct { font-weight: 600; color: var(--text); }
   .prog-acres { color: var(--text-hint); }
+  .prog-sub { margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--border); display: flex; flex-direction: column; gap: 7px; }
+  .prog-sub-row { display: flex; flex-direction: column; gap: 3px; }
+  .prog-sub-label { display: flex; justify-content: space-between; font-size: 11px; }
+  .prog-sub-name { color: var(--text-muted); font-weight: 500; }
+  .prog-sub-pct { color: var(--text-hint); }
+  .prog-track-sm { height: 5px; border-radius: 3px; background: var(--bg); overflow: hidden; border: 1px solid var(--border); }
+  .prog-bar-corn { height: 100%; border-radius: 3px; background: var(--corn); transition: width .5s ease; }
+  .prog-bar-beans { height: 100%; border-radius: 3px; background: var(--beans); transition: width .5s ease; }
+  .prog-bar-mitchell { height: 100%; border-radius: 3px; background: #378ADD; transition: width .5s ease; }
+  .prog-bar-heltonville { height: 100%; border-radius: 3px; background: #7F77DD; transition: width .5s ease; }
 
   .table-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow); }
   .table-scroll { overflow-x: auto; overflow-y: auto; -webkit-overflow-scrolling: touch; max-height: 60vh; }
@@ -294,26 +304,116 @@
         <div class="op-name">Pre-spray</div>
         <div class="prog-track"><div class="prog-bar" id="bar-prespray" style="width:0%"></div></div>
         <div class="prog-labels"><span class="prog-pct" id="pct-prespray">0%</span><span class="prog-acres" id="ac-prespray">0 / 0 ac</span></div>
+        <div class="prog-sub">
+          <div class="prog-sub-row">
+            <div class="prog-sub-label"><span class="prog-sub-name">Corn</span><span class="prog-sub-pct" id="pct-prespray-corn">0%</span></div>
+            <div class="prog-track-sm"><div class="prog-bar-corn" id="bar-prespray-corn" style="width:0%"></div></div>
+          </div>
+          <div class="prog-sub-row">
+            <div class="prog-sub-label"><span class="prog-sub-name">Beans</span><span class="prog-sub-pct" id="pct-prespray-beans">0%</span></div>
+            <div class="prog-track-sm"><div class="prog-bar-beans" id="bar-prespray-beans" style="width:0%"></div></div>
+          </div>
+          <div class="prog-sub-row">
+            <div class="prog-sub-label"><span class="prog-sub-name">Mitchell</span><span class="prog-sub-pct" id="pct-prespray-mitchell">0%</span></div>
+            <div class="prog-track-sm"><div class="prog-bar-mitchell" id="bar-prespray-mitchell" style="width:0%"></div></div>
+          </div>
+          <div class="prog-sub-row">
+            <div class="prog-sub-label"><span class="prog-sub-name">Heltonville</span><span class="prog-sub-pct" id="pct-prespray-heltonville">0%</span></div>
+            <div class="prog-track-sm"><div class="prog-bar-heltonville" id="bar-prespray-heltonville" style="width:0%"></div></div>
+          </div>
+        </div>
       </div>
       <div class="op-card">
         <div class="op-name">Planting</div>
         <div class="prog-track"><div class="prog-bar" id="bar-planting" style="width:0%"></div></div>
         <div class="prog-labels"><span class="prog-pct" id="pct-planting">0%</span><span class="prog-acres" id="ac-planting">0 / 0 ac</span></div>
+        <div class="prog-sub">
+          <div class="prog-sub-row">
+            <div class="prog-sub-label"><span class="prog-sub-name">Corn</span><span class="prog-sub-pct" id="pct-planting-corn">0%</span></div>
+            <div class="prog-track-sm"><div class="prog-bar-corn" id="bar-planting-corn" style="width:0%"></div></div>
+          </div>
+          <div class="prog-sub-row">
+            <div class="prog-sub-label"><span class="prog-sub-name">Beans</span><span class="prog-sub-pct" id="pct-planting-beans">0%</span></div>
+            <div class="prog-track-sm"><div class="prog-bar-beans" id="bar-planting-beans" style="width:0%"></div></div>
+          </div>
+          <div class="prog-sub-row">
+            <div class="prog-sub-label"><span class="prog-sub-name">Mitchell</span><span class="prog-sub-pct" id="pct-planting-mitchell">0%</span></div>
+            <div class="prog-track-sm"><div class="prog-bar-mitchell" id="bar-planting-mitchell" style="width:0%"></div></div>
+          </div>
+          <div class="prog-sub-row">
+            <div class="prog-sub-label"><span class="prog-sub-name">Heltonville</span><span class="prog-sub-pct" id="pct-planting-heltonville">0%</span></div>
+            <div class="prog-track-sm"><div class="prog-bar-heltonville" id="bar-planting-heltonville" style="width:0%"></div></div>
+          </div>
+        </div>
       </div>
       <div class="op-card">
         <div class="op-name">Post-spray</div>
         <div class="prog-track"><div class="prog-bar" id="bar-postspray" style="width:0%"></div></div>
         <div class="prog-labels"><span class="prog-pct" id="pct-postspray">0%</span><span class="prog-acres" id="ac-postspray">0 / 0 ac</span></div>
+        <div class="prog-sub">
+          <div class="prog-sub-row">
+            <div class="prog-sub-label"><span class="prog-sub-name">Corn</span><span class="prog-sub-pct" id="pct-postspray-corn">0%</span></div>
+            <div class="prog-track-sm"><div class="prog-bar-corn" id="bar-postspray-corn" style="width:0%"></div></div>
+          </div>
+          <div class="prog-sub-row">
+            <div class="prog-sub-label"><span class="prog-sub-name">Beans</span><span class="prog-sub-pct" id="pct-postspray-beans">0%</span></div>
+            <div class="prog-track-sm"><div class="prog-bar-beans" id="bar-postspray-beans" style="width:0%"></div></div>
+          </div>
+          <div class="prog-sub-row">
+            <div class="prog-sub-label"><span class="prog-sub-name">Mitchell</span><span class="prog-sub-pct" id="pct-postspray-mitchell">0%</span></div>
+            <div class="prog-track-sm"><div class="prog-bar-mitchell" id="bar-postspray-mitchell" style="width:0%"></div></div>
+          </div>
+          <div class="prog-sub-row">
+            <div class="prog-sub-label"><span class="prog-sub-name">Heltonville</span><span class="prog-sub-pct" id="pct-postspray-heltonville">0%</span></div>
+            <div class="prog-track-sm"><div class="prog-bar-heltonville" id="bar-postspray-heltonville" style="width:0%"></div></div>
+          </div>
+        </div>
       </div>
       <div class="op-card">
         <div class="op-name">Fertilizer</div>
         <div class="prog-track"><div class="prog-bar" id="bar-fertilizer" style="width:0%"></div></div>
         <div class="prog-labels"><span class="prog-pct" id="pct-fertilizer">0%</span><span class="prog-acres" id="ac-fertilizer">0 / 0 ac</span></div>
+        <div class="prog-sub">
+          <div class="prog-sub-row">
+            <div class="prog-sub-label"><span class="prog-sub-name">Corn</span><span class="prog-sub-pct" id="pct-fertilizer-corn">0%</span></div>
+            <div class="prog-track-sm"><div class="prog-bar-corn" id="bar-fertilizer-corn" style="width:0%"></div></div>
+          </div>
+          <div class="prog-sub-row">
+            <div class="prog-sub-label"><span class="prog-sub-name">Beans</span><span class="prog-sub-pct" id="pct-fertilizer-beans">0%</span></div>
+            <div class="prog-track-sm"><div class="prog-bar-beans" id="bar-fertilizer-beans" style="width:0%"></div></div>
+          </div>
+          <div class="prog-sub-row">
+            <div class="prog-sub-label"><span class="prog-sub-name">Mitchell</span><span class="prog-sub-pct" id="pct-fertilizer-mitchell">0%</span></div>
+            <div class="prog-track-sm"><div class="prog-bar-mitchell" id="bar-fertilizer-mitchell" style="width:0%"></div></div>
+          </div>
+          <div class="prog-sub-row">
+            <div class="prog-sub-label"><span class="prog-sub-name">Heltonville</span><span class="prog-sub-pct" id="pct-fertilizer-heltonville">0%</span></div>
+            <div class="prog-track-sm"><div class="prog-bar-heltonville" id="bar-fertilizer-heltonville" style="width:0%"></div></div>
+          </div>
+        </div>
       </div>
       <div class="op-card">
         <div class="op-name">Harvest</div>
         <div class="prog-track"><div class="prog-bar" id="bar-harvest" style="width:0%"></div></div>
         <div class="prog-labels"><span class="prog-pct" id="pct-harvest">0%</span><span class="prog-acres" id="ac-harvest">0 / 0 ac</span></div>
+        <div class="prog-sub">
+          <div class="prog-sub-row">
+            <div class="prog-sub-label"><span class="prog-sub-name">Corn</span><span class="prog-sub-pct" id="pct-harvest-corn">0%</span></div>
+            <div class="prog-track-sm"><div class="prog-bar-corn" id="bar-harvest-corn" style="width:0%"></div></div>
+          </div>
+          <div class="prog-sub-row">
+            <div class="prog-sub-label"><span class="prog-sub-name">Beans</span><span class="prog-sub-pct" id="pct-harvest-beans">0%</span></div>
+            <div class="prog-track-sm"><div class="prog-bar-beans" id="bar-harvest-beans" style="width:0%"></div></div>
+          </div>
+          <div class="prog-sub-row">
+            <div class="prog-sub-label"><span class="prog-sub-name">Mitchell</span><span class="prog-sub-pct" id="pct-harvest-mitchell">0%</span></div>
+            <div class="prog-track-sm"><div class="prog-bar-mitchell" id="bar-harvest-mitchell" style="width:0%"></div></div>
+          </div>
+          <div class="prog-sub-row">
+            <div class="prog-sub-label"><span class="prog-sub-name">Heltonville</span><span class="prog-sub-pct" id="pct-harvest-heltonville">0%</span></div>
+            <div class="prog-track-sm"><div class="prog-bar-heltonville" id="bar-harvest-heltonville" style="width:0%"></div></div>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -733,7 +833,16 @@ function renderStats() {
 function renderOpBars() {
   const yf = getYearFields();
   const totalAc = yf.reduce((s,f)=>s+f.acres,0);
+
+  const subGroups = [
+    {key:'corn',       fields: yf.filter(f=>f.crop==='corn')},
+    {key:'beans',      fields: yf.filter(f=>f.crop==='beans')},
+    {key:'mitchell',   fields: yf.filter(f=>f.location==='mitchell')},
+    {key:'heltonville',fields: yf.filter(f=>f.location==='heltonville')},
+  ];
+
   OPS.forEach(op => {
+    // Overall bar
     const doneAc = yf.filter(f=>f[op]).reduce((s,f)=>s+f.acres,0);
     const pct = totalAc ? Math.round(doneAc/totalAc*100) : 0;
     const bar = document.getElementById('bar-'+op);
@@ -741,6 +850,16 @@ function renderOpBars() {
     bar.className = 'prog-bar'+(pct===100?' done':pct>0?' partial':'');
     setText('pct-'+op, pct+'%');
     setText('ac-'+op, Math.round(doneAc).toLocaleString()+' / '+Math.round(totalAc).toLocaleString()+' ac');
+
+    // Sub-group bars
+    subGroups.forEach(({key, fields}) => {
+      const grpTotal = fields.reduce((s,f)=>s+f.acres,0);
+      const grpDone  = fields.filter(f=>f[op]).reduce((s,f)=>s+f.acres,0);
+      const grpPct   = grpTotal ? Math.round(grpDone/grpTotal*100) : 0;
+      const subBar = document.getElementById('bar-'+op+'-'+key);
+      if (subBar) subBar.style.width = grpPct+'%';
+      setText('pct-'+op+'-'+key, grpPct+'%');
+    });
   });
 }
 
