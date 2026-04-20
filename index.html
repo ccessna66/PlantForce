@@ -116,6 +116,8 @@
   .badge { display: inline-block; font-size: 11px; font-weight: 600; padding: 2px 9px; border-radius: 12px; }
   .badge-corn { background: var(--corn-bg); color: var(--corn); }
   .badge-beans { background: var(--beans-bg); color: var(--beans); }
+  .badge-mitchell { background: #e8f0fb; color: #1a4f8a; }
+  .badge-heltonville { background: #f0eafa; color: #5a3a8a; }
   .op-check { width: 22px; height: 22px; border-radius: 50%; border: 1.5px solid var(--border); background: transparent; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; transition: all .15s; font-size: 12px; color: #fff; }
   .op-check.checked { background: var(--green-mid); border-color: var(--green-mid); }
   .op-check.checked::after { content: '\2713'; }
@@ -317,11 +319,22 @@
 
     <div class="table-card">
       <div class="table-toolbar">
-        <div class="toolbar-left">
-          <div class="filter-tabs">
-            <button class="filter-tab active" onclick="setFilter('all',this)">All</button>
-            <button class="filter-tab" onclick="setFilter('corn',this)">Corn</button>
-            <button class="filter-tab" onclick="setFilter('beans',this)">Beans</button>
+        <div class="toolbar-left" style="flex-direction:column;align-items:flex-start;gap:8px;">
+          <div style="display:flex;align-items:center;gap:8px;">
+            <span style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--text-muted);white-space:nowrap;">Location</span>
+            <div class="filter-tabs" id="loc-filter-tabs">
+              <button class="filter-tab active" onclick="setLocFilter('all',this)">All</button>
+              <button class="filter-tab" onclick="setLocFilter('mitchell',this)">Mitchell</button>
+              <button class="filter-tab" onclick="setLocFilter('heltonville',this)">Heltonville</button>
+            </div>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <span style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--text-muted);white-space:nowrap;">Crop</span>
+            <div class="filter-tabs">
+              <button class="filter-tab active" onclick="setFilter('all',this)">All</button>
+              <button class="filter-tab" onclick="setFilter('corn',this)">Corn</button>
+              <button class="filter-tab" onclick="setFilter('beans',this)">Beans</button>
+            </div>
           </div>
         </div>
         <button class="btn btn-primary" onclick="openAddField()">+ Add Field</button>
@@ -330,13 +343,13 @@
       <table>
         <thead>
           <tr>
-            <th>Field</th><th>Crop</th><th>Acres</th>
+            <th>Field</th><th>Location</th><th>Crop</th><th>Acres</th>
             <th>Pre-spray</th><th>Planting</th><th>Fertilizer</th><th>Post-spray</th><th>Harvest</th>
             <th></th>
           </tr>
         </thead>
         <tbody id="field-tbody">
-          <tr class="loading-row"><td colspan="9">Loading&hellip;</td></tr>
+          <tr class="loading-row"><td colspan="10">Loading&hellip;</td></tr>
         </tbody>
       </table>
       </div>
@@ -370,6 +383,14 @@
         <div class="form-group">
           <label>Acres *</label>
           <input id="field-acres" type="number" step="0.1" min="0" placeholder="0.0">
+        </div>
+        <div class="form-group">
+          <label>Location *</label>
+          <select id="field-location">
+            <option value="">Select&hellip;</option>
+            <option value="mitchell">Mitchell</option>
+            <option value="heltonville">Heltonville</option>
+          </select>
         </div>
       </div>
     </div>
@@ -432,10 +453,10 @@ const OP_LABEL = {prespray:'Pre-spray',planting:'Planting',fertilizer:'Fertilize
 let accessToken = null, tokenClient = null;
 let spreadsheetId = null, clientId = null;
 let activeYear = null, years = [];
-let fields = [];    // [{id, name, acres}]
+let fields = [];    // [{id, name, acres, location}]
 let yearData = {};  // {year: [{fieldId, crop, prespray, planting, fertilizer, postspray, harvest}]}
 let sheetMeta = {}; // {sheetTitle: sheetId}
-let cropFilter = 'all', editingFieldId = null, saveTimer = null;
+let cropFilter = 'all', locationFilter = 'all', editingFieldId = null, saveTimer = null;
 
 // ── SETUP ──────────────────────────────────
 function switchSetupMode(mode, btn) {
@@ -552,7 +573,7 @@ async function createSpreadsheet() {
   localStorage.setItem('pf_sid', spreadsheetId);
 
   await getSheetMeta();
-  await setValues(FIELDS_TAB+'!A1:C1', [['ID','Name','Acres']]);
+  await setValues(FIELDS_TAB+'!A1:D1', [['ID','Name','Acres','Location']]);
   await setValues(curYear+'!A1:H1', [['FieldID','FieldName','Crop','PreSpray','Planting','Fertilizer','PostSpray','Harvest']]);
 
   updateSheetsLink();
@@ -577,8 +598,8 @@ async function loadAll() {
     }
     activeYear = years[years.length-1];
 
-    const fRows = await getValues(FIELDS_TAB+'!A2:C1000');
-    fields = fRows.filter(r=>r[0]).map(r=>({id:r[0], name:r[1]||'', acres:parseFloat(r[2])||0}));
+    const fRows = await getValues(FIELDS_TAB+'!A2:D1000');
+    fields = fRows.filter(r=>r[0]).map(r=>({id:r[0], name:r[1]||'', acres:parseFloat(r[2])||0, location:r[3]||''}));
 
     yearData={};
     for (const y of years) await loadYearData(y);
@@ -618,7 +639,7 @@ function scheduleSave() {
 async function saveAll() {
   if (!spreadsheetId) return;
   try {
-    const fVals = [['ID','Name','Acres'], ...fields.map(f=>[f.id,f.name,f.acres])];
+    const fVals = [['ID','Name','Acres','Location'], ...fields.map(f=>[f.id,f.name,f.acres,f.location||''])];
     await clearRange(FIELDS_TAB+'!A1:Z1000');
     await setValues(FIELDS_TAB+'!A1', fVals);
     await saveYearTab(activeYear);
@@ -687,7 +708,7 @@ function getYearFields() {
   const yd = yearData[activeYear]||[];
   return fields.map(f => {
     const d = yd.find(x=>x.fieldId===f.id)||{};
-    return {...f, crop:d.crop||'', prespray:!!d.prespray, planting:!!d.planting, fertilizer:!!d.fertilizer, postspray:!!d.postspray, harvest:!!d.harvest};
+    return {...f, location:f.location||'', crop:d.crop||'', prespray:!!d.prespray, planting:!!d.planting, fertilizer:!!d.fertilizer, postspray:!!d.postspray, harvest:!!d.harvest};
   });
 }
 
@@ -725,19 +746,24 @@ function renderOpBars() {
 
 function renderTable() {
   const tbody = document.getElementById('field-tbody');
-  const yf = getYearFields().filter(f=>cropFilter==='all'||f.crop===cropFilter);
+  const yf = getYearFields()
+    .filter(f=>(cropFilter==='all'||f.crop===cropFilter) && (locationFilter==='all'||f.location===locationFilter))
+    .sort((a,b)=>a.name.localeCompare(b.name));
   if (!yf.length) {
-    tbody.innerHTML='<tr class="empty-row"><td colspan="9">No fields yet &mdash; click <strong>+ Add Field</strong> to get started.</td></tr>';
+    tbody.innerHTML='<tr class="empty-row"><td colspan="10">No fields yet &mdash; click <strong>+ Add Field</strong> to get started.</td></tr>';
     return;
   }
   tbody.innerHTML = yf.map(f => {
     const checks = OPS.map(op=>
       '<td><div class="op-check'+(f[op]?' checked':'')+'" onclick="toggleOp(\''+f.id+'\',\''+op+'\',this)" title="'+OP_LABEL[op]+'"></div></td>'
     ).join('');
-    const badge = f.crop
+    const cropBadge = f.crop
       ? '<span class="badge badge-'+f.crop+'">'+f.crop+'</span>'
       : '<span style="color:var(--text-hint);font-size:12px">&mdash;</span>';
-    return '<tr><td class="field-name">'+esc(f.name)+'</td><td>'+badge+'</td><td>'+f.acres.toLocaleString()+'</td>'+checks+
+    const locBadge = f.location
+      ? '<span class="badge badge-'+f.location+'">'+f.location.charAt(0).toUpperCase()+f.location.slice(1)+'</span>'
+      : '<span style="color:var(--text-hint);font-size:12px">&mdash;</span>';
+    return '<tr><td class="field-name">'+esc(f.name)+'</td><td>'+locBadge+'</td><td>'+cropBadge+'</td><td>'+f.acres.toLocaleString()+'</td>'+checks+
       '<td><div class="row-actions">'+
       '<button class="btn-row" onclick="openEditField(\''+f.id+'\')">Edit</button>'+
       '<button class="btn-row danger" onclick="confirmDelete(\''+f.id+'\')">Delete</button>'+
@@ -760,7 +786,7 @@ function toggleOp(fieldId, op, el) {
 function openAddField() {
   editingFieldId=null;
   setText('field-modal-title','Add Field');
-  setVal('field-id',''); setVal('field-name',''); setVal('field-crop',''); setVal('field-acres','');
+  setVal('field-id',''); setVal('field-name',''); setVal('field-crop',''); setVal('field-acres',''); setVal('field-location','');
   document.getElementById('crop-hint').style.display='none';
   document.getElementById('btn-delete-field').style.display='none';
   openModal('modal-field');
@@ -772,7 +798,7 @@ function openEditField(id) {
   const yd = (yearData[activeYear]||[]).find(x=>x.fieldId===id)||{};
   setText('field-modal-title','Edit Field');
   setVal('field-id',f.id); setVal('field-name',f.name);
-  setVal('field-crop',yd.crop||''); setVal('field-acres',f.acres);
+  setVal('field-crop',yd.crop||''); setVal('field-acres',f.acres); setVal('field-location',f.location||'');
 
   const prevYear = years[years.indexOf(activeYear)-1];
   const hint = document.getElementById('crop-hint');
@@ -787,23 +813,25 @@ function openEditField(id) {
 }
 
 function saveField() {
-  const name  = document.getElementById('field-name').value.trim();
-  const crop  = document.getElementById('field-crop').value;
-  const acres = parseFloat(document.getElementById('field-acres').value);
-  if (!name)        return alert('Field name is required.');
-  if (!crop)        return alert('Please select a crop for this season.');
+  const name     = document.getElementById('field-name').value.trim();
+  const crop     = document.getElementById('field-crop').value;
+  const acres    = parseFloat(document.getElementById('field-acres').value);
+  const location = document.getElementById('field-location').value;
+  if (!name)           return alert('Field name is required.');
+  if (!crop)           return alert('Please select a crop for this season.');
   if (!acres||acres<=0) return alert('Please enter a valid acreage.');
+  if (!location)       return alert('Please select a location.');
 
   if (editingFieldId) {
     const f = fields.find(x=>x.id===editingFieldId);
-    if (f) { f.name=name; f.acres=acres; }
+    if (f) { f.name=name; f.acres=acres; f.location=location; }
     if (!yearData[activeYear]) yearData[activeYear]=[];
     let d = yearData[activeYear].find(x=>x.fieldId===editingFieldId);
     if (!d) { d={fieldId:editingFieldId,crop:'',prespray:false,planting:false,fertilizer:false,postspray:false,harvest:false}; yearData[activeYear].push(d); }
     d.crop=crop;
   } else {
     const id='f'+Date.now();
-    fields.push({id,name,acres});
+    fields.push({id,name,acres,location});
     if (!yearData[activeYear]) yearData[activeYear]=[];
     yearData[activeYear].push({fieldId:id,crop,prespray:false,planting:false,fertilizer:false,postspray:false,harvest:false});
     years.filter(y=>y!==activeYear).forEach(y=>{
@@ -836,7 +864,14 @@ function deleteField() {
 // ── FILTER ────────────────────────────────
 function setFilter(v, el) {
   cropFilter=v;
-  document.querySelectorAll('.filter-tab').forEach(t=>t.classList.remove('active'));
+  el.closest('.filter-tabs').querySelectorAll('.filter-tab').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+  renderTable();
+}
+
+function setLocFilter(v, el) {
+  locationFilter=v;
+  document.getElementById('loc-filter-tabs').querySelectorAll('.filter-tab').forEach(t=>t.classList.remove('active'));
   el.classList.add('active');
   renderTable();
 }
