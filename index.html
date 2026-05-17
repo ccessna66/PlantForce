@@ -821,15 +821,18 @@ function renderStats() {
   const total = yf.reduce((s,f)=>s+f.acres,0);
   const corn  = yf.filter(f=>f.crop==='corn');
   const beans = yf.filter(f=>f.crop==='beans');
-  let done=0; yf.forEach(f=>OPS.forEach(op=>{if(f[op])done++;}));
-  const tot = yf.length*4;
+  // Season progress: acre-weighted across all operations
+  const totalOpAc = total * OPS.length;
+  let doneOpAc = 0;
+  OPS.forEach(op => { doneOpAc += yf.filter(f=>f[op]).reduce((s,f)=>s+f.acres,0); });
+  const seasonPct = totalOpAc ? Math.round(doneOpAc / totalOpAc * 100) : 0;
   setText('stat-acres', total.toLocaleString());
   setText('stat-fields', yf.length+' field'+(yf.length!==1?'s':''));
   setText('stat-corn-ac', corn.reduce((s,f)=>s+f.acres,0).toLocaleString()+' ac');
   setText('stat-corn-ct', corn.length+' field'+(corn.length!==1?'s':''));
   setText('stat-beans-ac', beans.reduce((s,f)=>s+f.acres,0).toLocaleString()+' ac');
   setText('stat-beans-ct', beans.length+' field'+(beans.length!==1?'s':''));
-  setText('stat-season', (tot?Math.round(done/tot*100):0)+'%');
+  setText('stat-season', seasonPct+'%');
 }
 
 function renderOpBars() {
